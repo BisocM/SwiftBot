@@ -1,4 +1,4 @@
-package com.swiftbot;
+package bisocm.swiftbot.lib;
 
 class NativeBindings {
 

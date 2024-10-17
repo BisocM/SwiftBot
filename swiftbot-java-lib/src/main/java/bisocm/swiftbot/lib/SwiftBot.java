@@ -1,6 +1,4 @@
-package com.swiftbot;
-
-import com.swiftbot.NativeBindings;
+package bisocm.swiftbot.lib;
 
 public class SwiftBot {
     private ButtonListener buttonListener;

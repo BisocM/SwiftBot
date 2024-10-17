@@ -68,7 +68,7 @@ lazy_static! {
 /// public static native void stop();
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_stop(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_stop(
     mut env: JNIEnv,
     _class: JClass,
 ) {
@@ -98,7 +98,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_stop(
 /// public static native void forward(double speed);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_forward(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_forward(
     mut env: JNIEnv,
     _class: JClass,
     speed: jdouble,
@@ -129,7 +129,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_forward(
 /// public static native void backward(double speed);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_backward(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_backward(
     mut env: JNIEnv,
     _class: JClass,
     speed: jdouble,
@@ -160,7 +160,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_backward(
 /// public static native void turnLeft(double speed);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_turnLeft(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_turnLeft(
     mut env: JNIEnv,
     _class: JClass,
     speed: jdouble,
@@ -191,7 +191,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_turnLeft(
 /// public static native void turnRight(double speed);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_turnRight(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_turnRight(
     mut env: JNIEnv,
     _class: JClass,
     speed: jdouble,
@@ -223,7 +223,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_turnRight(
 /// public static native void setMotorSpeeds(double leftSpeed, double rightSpeed);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_setMotorSpeeds(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_setMotorSpeeds(
     mut env: JNIEnv,
     _class: JClass,
     left_speed: jdouble,
@@ -255,7 +255,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_setMotorSpeeds(
 /// public static native double readDistance();
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_readDistance(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_readDistance(
     mut env: JNIEnv,
     _class: JClass,
 ) -> jdouble {
@@ -312,7 +312,7 @@ fn read_button_state(pin: &InputPin) -> bool {
 /// public static native boolean readButton(int buttonId);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_readButton(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_readButton(
     mut env: JNIEnv,
     _class: JClass,
     button_id: jint,
@@ -351,7 +351,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_readButton(
 /// public static native void setButtonLed(int buttonLedId, double value);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_setButtonLed(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_setButtonLed(
     mut env: JNIEnv,
     _class: JClass,
     button_led_id: jint,
@@ -386,7 +386,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_setButtonLed(
 /// public static native void setUnderlight(int lightId, int red, int green, int blue);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_setUnderlight(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_setUnderlight(
     mut env: JNIEnv,
     _class: JClass,
     light_id: jint,
@@ -429,7 +429,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_setUnderlight(
 /// public static native void fillUnderlighting(int red, int green, int blue);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_fillUnderlighting(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_fillUnderlighting(
     mut env: JNIEnv,
     _class: JClass,
     red: jint,
@@ -458,7 +458,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_fillUnderlighting(
 /// public static native void clearUnderlighting();
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_clearUnderlighting(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_clearUnderlighting(
     mut env: JNIEnv,
     _class: JClass,
 ) {
@@ -488,7 +488,7 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_clearUnderlighting(
 /// public static native byte[] captureImage();
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_captureImage(
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_captureImage(
     mut env: JNIEnv,
     _class: JClass,
 ) -> jbyteArray {
@@ -508,8 +508,8 @@ pub extern "system" fn Java_com_swiftbot_NativeBindings_captureImage(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_com_swiftbot_NativeBindings_startButtonMonitoring(
-    env: JNIEnv,
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_startButtonMonitoring(
+    mut env: JNIEnv,
     _class: JClass,
 ) {
     let jvm = env.get_java_vm().unwrap(); // Get Java VM instance for attaching threads later

@@ -1,4 +1,4 @@
-package com.swiftbot;
+package bisocm.swiftbot.lib;
 
 public interface ButtonListener {
     void onButtonPressed(int buttonId);
