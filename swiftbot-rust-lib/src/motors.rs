@@ -109,12 +109,21 @@ impl Motors {
         self.set_motor_speeds(speed, -speed)
     }
 
-    pub fn set_motor_speeds(&mut self, left_speed: f64, right_speed: f64) -> Result<(), Box<dyn Error>> {
+    pub fn set_motor_speeds(
+        &mut self,
+        left_speed: f64,
+        right_speed: f64,
+    ) -> Result<(), Box<dyn Error>> {
         self.set_motor_speed(MOTOR_LEFT, left_speed)?;
         self.set_motor_speed(MOTOR_RIGHT, right_speed)
     }
 
-    pub fn set_motor_direction(&mut self, motor: u8, direction: bool, speed: f64) -> Result<(), Box<dyn Error>> {
+    pub fn set_motor_direction(
+        &mut self,
+        motor: u8,
+        direction: bool,
+        speed: f64,
+    ) -> Result<(), Box<dyn Error>> {
         let clamped_speed = clamp(speed.abs(), 0.0, 1.0);
         self.motor_en.set_high();
 

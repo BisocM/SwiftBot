@@ -9,6 +9,13 @@ crate-type = ["cdylib"]  # Compile as a C-compatible dynamic library for JNI sup
 
 [dependencies]
 rppal = "0.19.0"
+glib = "0.20.4"
+gstreamer = "0.23.2"
+gstreamer-rtsp-server = { version = "0.23.2", features = ["v1_18"] }
+gstreamer-video = "0.23.2"
+gstreamer-app = "0.23.2"
+gstreamer-pbutils = "0.23.2"
+gstreamer-base = "0.23.2"
 jni = { version = "0.21.1", features = ["invocation"] }  # For JNI support
 lazy_static = "1.4.0"
-rscam = "0.5.5"
+opencv = { version = "0.93.3", features = ["imgcodecs", "videoio", ]}

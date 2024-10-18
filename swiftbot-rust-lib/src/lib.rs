@@ -1,27 +1,29 @@
 #[macro_use]
 extern crate lazy_static;
-mod config;
 mod buttons;
+mod camera;
+mod config;
 mod motors;
 mod sensors;
-mod utils;
-mod camera;
 mod sn3218;
+mod utils;
+mod rtsp_streamer;
 
-use crate::sn3218::UnderlightLeds;
+use crate::buttons::{notify_button_pressed, notify_button_released, Buttons};
+use crate::camera::{CameraController};
+use crate::config::{BUTTON_A_PIN, BUTTON_B_PIN, BUTTON_X_PIN, BUTTON_Y_PIN};
 use crate::motors::Motors;
 use crate::sensors::Sensors;
-use crate::buttons::{notify_button_pressed, notify_button_released, Buttons};
-use crate::camera::CameraController;
-use crate::config::{BUTTON_A_PIN, BUTTON_B_PIN, BUTTON_X_PIN, BUTTON_Y_PIN};
+use crate::sn3218::UnderlightLeds;
 
-use jni::objects::JClass;
+use jni::objects::{JByteBuffer, JClass, JString};
 use jni::sys::{jboolean, jbyteArray, jdouble, jint};
 use jni::JNIEnv;
+use rppal::gpio::{Gpio, InputPin};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use rppal::gpio::{Gpio, InputPin};
+use crate::rtsp_streamer::{start_rtsp_streaming, stop_rtsp_streaming};
 
 //Use lazy_static to create static instances accessible across JNI calls
 lazy_static! {
@@ -395,12 +397,7 @@ pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_setUnderlight(
     blue: jint,
 ) {
     let mut leds = SN3218LEDS.lock().unwrap();
-    if let Err(e) = leds.set_rgb(
-        light_id as u8,
-        red as u8,
-        green as u8,
-        blue as u8,
-    ) {
+    if let Err(e) = leds.set_rgb(light_id as u8, red as u8, green as u8, blue as u8) {
         let _ = env.throw_new("java/lang/Exception", format!("{}", e));
     } else if let Err(e) = leds.update_underlighting() {
         let _ = env.throw_new("java/lang/Exception", format!("{}", e));
@@ -468,45 +465,6 @@ pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_clearUnderlightin
     }
 }
 
-/// Captures an image from the camera and returns it as a byte array.
-///
-/// # Returns
-///
-/// A Java byte array containing the JPEG image data.
-///
-/// # Safety
-///
-/// This function interacts with hardware through JNI calls and must be used carefully.
-///
-/// # Errors
-///
-/// Throws a Java `Exception` if there is an error capturing the image.
-///
-/// # JNI Signature
-///
-/// ```java
-/// public static native byte[] captureImage();
-/// ```
-#[no_mangle]
-pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_captureImage(
-    mut env: JNIEnv,
-    _class: JClass,
-) -> jbyteArray {
-    let mut camera = CAMERA.lock().unwrap();
-    match camera.capture_image() {
-        Ok(image_data) => {
-            //Convert Rust Vec<u8> to Java byte array
-            let buf = env.byte_array_from_slice(&image_data).unwrap();
-            **buf
-        }
-        Err(e) => {
-            let _ = env.throw_new("java/lang/Exception", format!("{}", e));
-            //Return null in case of error
-            std::ptr::null_mut()
-        }
-    }
-}
-
 #[no_mangle]
 pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_startButtonMonitoring(
     mut env: JNIEnv,
@@ -555,4 +513,77 @@ pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_startButtonMonito
             }
         }
     });
+}
+
+/// Captures an image from the camera and returns it as a byte array.
+///
+/// # Returns
+///
+/// A Java byte array containing the JPEG image data.
+///
+/// # Safety
+///
+/// This function interacts with hardware through JNI calls and must be used carefully.
+///
+/// # Errors
+///
+/// Throws a Java `Exception` if there is an error capturing the image.
+///
+/// # JNI Signature
+///
+/// ```java
+/// public static native byte[] captureImage();
+/// ```
+#[no_mangle]
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_captureImageToBuffer(
+    mut env: JNIEnv,
+    _class: JClass,
+    buffer: JByteBuffer,
+) -> jint {
+    let mut camera = CAMERA.lock().unwrap();
+
+    // Get the buffer address
+    let buf = match unsafe { env.get_direct_buffer_address(&buffer) } {
+        Ok(buf) => buf,
+        Err(e) => {
+            let _ = env.throw_new("java/lang/Exception", format!("Failed to get buffer address: {}", e));
+            return -1;
+        }
+    };
+
+    // Get the buffer capacity
+    let buffer_len = match env.get_direct_buffer_capacity(&buffer) {
+        Ok(capacity) => capacity as usize,
+        Err(e) => {
+            let _ = env.throw_new("java/lang/Exception", format!("Failed to get buffer capacity: {}", e));
+            return -1;
+        }
+    };
+
+    // Call capture_image with both buffer and buffer_len
+    match camera.capture_image(buf, buffer_len) {
+        Ok(data_len) => data_len as jint,
+        Err(e) => {
+            let _ = env.throw_new("java/lang/Exception", format!("{}", e));
+            -1
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_startRtspStreaming(
+    mut env: JNIEnv,
+    _class: JClass,
+) {
+    if let Err(e) = start_rtsp_streaming() {
+        let _ = env.throw_new("java/lang/Exception", format!("Failed to start RTSP streaming: {}", e));
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_stopRtspStreaming(
+    _env: JNIEnv,
+    _class: JClass,
+) {
+    stop_rtsp_streaming();
 }

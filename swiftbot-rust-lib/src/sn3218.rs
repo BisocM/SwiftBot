@@ -1,6 +1,6 @@
+use rppal::i2c::I2c;
 use std::error::Error;
 use std::fs;
-use rppal::i2c::I2c;
 
 const REG_SHUTDOWN: u8 = 0x00;
 const REG_PWM_START: u8 = 0x01;
@@ -76,7 +76,9 @@ impl UnderlightLeds {
     /// Sets a specific channel's brightness.
     pub fn set_channel(&mut self, channel: u8, brightness: u8) -> Result<(), Box<dyn Error>> {
         if channel >= 18 {
-            return Err(format!("Invalid channel ID: {}. Must be between 0 and 17.", channel).into());
+            return Err(
+                format!("Invalid channel ID: {}. Must be between 0 and 17.", channel).into(),
+            );
         }
         self.underlight[channel as usize] = brightness;
         Ok(())
@@ -107,37 +109,43 @@ impl UnderlightLeds {
 
     /// Resets the SN3218 device.
     pub fn reset(&mut self) -> Result<(), Box<dyn Error>> {
-        self.sn3218.write(&[REG_RESET, 0xFF])
+        self.sn3218
+            .write(&[REG_RESET, 0xFF])
             .map_err(|_| Box::<dyn Error>::from("Failed to reset SN3218."))?;
         Ok(())
     }
 
     /// Enables SN3218 output.
     pub fn enable(&mut self) -> Result<(), Box<dyn Error>> {
-        self.sn3218.write(&[REG_ENABLE, 0x00])
+        self.sn3218
+            .write(&[REG_ENABLE, 0x00])
             .map_err(|_| Box::<dyn Error>::from("Failed to enable SN3218."))?;
         Ok(())
     }
 
     /// Disables SN3218 output.
     pub fn disable(&mut self) -> Result<(), Box<dyn Error>> {
-        self.sn3218.write(&[REG_ENABLE, 0x01])
+        self.sn3218
+            .write(&[REG_ENABLE, 0x01])
             .map_err(|_| Box::<dyn Error>::from("Failed to disable SN3218."))?;
         Ok(())
     }
 
     /// Applies the current PWM values and settings to the SN3218.
     fn apply_changes(&mut self) -> Result<(), Box<dyn Error>> {
-        self.sn3218.write(&[REG_UPDATE, 0xFF])
+        self.sn3218
+            .write(&[REG_UPDATE, 0xFF])
             .map_err(|_| Box::<dyn Error>::from("Failed to apply changes to SN3218."))?;
         Ok(())
     }
 
     /// Writes the `underlight` buffer to the PWM registers.
     fn write_pwm_values(&mut self) -> Result<(), Box<dyn Error>> {
-        self.sn3218.write(&[REG_PWM_START])
+        self.sn3218
+            .write(&[REG_PWM_START])
             .map_err(|_| Box::<dyn Error>::from("Failed to start register writing for PWM."))?;
-        self.sn3218.write(&self.underlight)
+        self.sn3218
+            .write(&self.underlight)
             .map_err(|_| Box::<dyn Error>::from("Failed to write PWM values to SN3218."))?;
         self.apply_changes()?;
         Ok(())

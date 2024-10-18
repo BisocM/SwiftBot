@@ -1,6 +1,9 @@
 package bisocm.swiftbot.lib;
 
+import java.lang.annotation.Native;
+
 public class SwiftBot {
+    //TODO: Fix the button listener. It is completely borked at the moment.
     private ButtonListener buttonListener;
 
     public SwiftBot(ButtonListener buttonListener)
@@ -208,6 +211,14 @@ public class SwiftBot {
      *         Returns `null` if an error occurs.
      */
     public byte[] captureImage() {
-        return NativeBindings.captureImage();
+        return NativeBindings.captureImageToBuffer();
+    }
+
+    public void startRtsp() {
+        NativeBindings.startRtspStreaming();
+    }
+
+    public void stopRtsp() {
+        NativeBindings.stopRtspStreaming();
     }
 }

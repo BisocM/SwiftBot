@@ -8,7 +8,7 @@ use std::error::Error;
 /// Struct to manage LED control and underlighting using the SN3218 LED driver
 pub struct Buttons {
     pub led_pins: [OutputPin; NUM_BUTTONS], //GPIO pins for button LEDs
-    pub led_frequency: f64, //PWM frequency for the button LEDs
+    pub led_frequency: f64,                 //PWM frequency for the button LEDs
 }
 
 impl Buttons {
@@ -55,14 +55,24 @@ impl Buttons {
 pub(crate) fn notify_button_pressed(jvm: &JavaVM, button_id: u8) {
     let mut env = jvm.attach_current_thread().unwrap();
     let button_class = env.find_class("com/swiftbot/NativeBindings").unwrap();
-    env.call_static_method(button_class, "onButtonPressed", "(I)V", &[jint::from(button_id).into()])
-        .unwrap();
+    env.call_static_method(
+        button_class,
+        "onButtonPressed",
+        "(I)V",
+        &[jint::from(button_id).into()],
+    )
+    .unwrap();
 }
 
 // Function to notify Java of a button release event
 pub(crate) fn notify_button_released(jvm: &JavaVM, button_id: u8) {
     let mut env = jvm.attach_current_thread().unwrap();
     let button_class = env.find_class("com/swiftbot/NativeBindings").unwrap();
-    env.call_static_method(button_class, "onButtonReleased", "(I)V", &[jint::from(button_id).into()])
-        .unwrap();
+    env.call_static_method(
+        button_class,
+        "onButtonReleased",
+        "(I)V",
+        &[jint::from(button_id).into()],
+    )
+    .unwrap();
 }
