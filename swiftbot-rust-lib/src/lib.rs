@@ -12,14 +12,13 @@ use crate::sn3218::UnderlightLeds;
 use crate::motors::Motors;
 use crate::sensors::Sensors;
 use crate::buttons::{notify_button_pressed, notify_button_released, Buttons};
-use crate::camera::CameraController;
 use crate::config::{BUTTON_A_PIN, BUTTON_B_PIN, BUTTON_X_PIN, BUTTON_Y_PIN};
 
-use jni::objects::JClass;
-use jni::sys::{jboolean, jbyteArray, jdouble, jint};
+use jni::objects::{JClass, JObject, JString};
+use jni::sys::{jboolean, jbyteArray, jdouble, jint, jobject};
 use jni::JNIEnv;
 use std::sync::{mpsc, Arc, Mutex};
-use std::thread;
+use std::{ptr, thread};
 use std::time::Duration;
 use rppal::gpio::{Gpio, InputPin};
 
@@ -41,9 +40,6 @@ lazy_static! {
 
     /// Shared instance of the `Sensors` struct, protected by a `Mutex` for thread safety.
     static ref SENSORS: Mutex<Sensors> = Mutex::new(Sensors::new(&GPIO).unwrap());
-
-    /// Shared instance of the `CameraController` struct, protected by a `Mutex` for thread safety.
-    static ref CAMERA: Mutex<CameraController> = Mutex::new(CameraController::new().unwrap());
 
     //Button pins
     static ref BUTTON_A_INPUT: InputPin = GPIO.get(BUTTON_A_PIN).unwrap().into_input_pulldown();
@@ -468,45 +464,6 @@ pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_clearUnderlightin
     }
 }
 
-/// Captures an image from the camera and returns it as a byte array.
-///
-/// # Returns
-///
-/// A Java byte array containing the JPEG image data.
-///
-/// # Safety
-///
-/// This function interacts with hardware through JNI calls and must be used carefully.
-///
-/// # Errors
-///
-/// Throws a Java `Exception` if there is an error capturing the image.
-///
-/// # JNI Signature
-///
-/// ```java
-/// public static native byte[] captureImage();
-/// ```
-#[no_mangle]
-pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_captureImage(
-    mut env: JNIEnv,
-    _class: JClass,
-) -> jbyteArray {
-    let mut camera = CAMERA.lock().unwrap();
-    match camera.capture_image() {
-        Ok(image_data) => {
-            //Convert Rust Vec<u8> to Java byte array
-            let buf = env.byte_array_from_slice(&image_data).unwrap();
-            **buf
-        }
-        Err(e) => {
-            let _ = env.throw_new("java/lang/Exception", format!("{}", e));
-            //Return null in case of error
-            std::ptr::null_mut()
-        }
-    }
-}
-
 #[no_mangle]
 pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_startButtonMonitoring(
     mut env: JNIEnv,
@@ -555,4 +512,49 @@ pub extern "system" fn Java_bisocm_swiftbot_lib_NativeBindings_startButtonMonito
             }
         }
     });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_CameraNative_getDirectBuffer(
+    mut env: JNIEnv,
+    _class: JObject,
+) -> jobject {
+    match camera::get_direct_buffer(&mut env) {
+        Ok(buffer) => buffer.into_raw(),
+        Err(err) => {
+            let _ = env.throw_new("java/lang/Exception", format!("Failed to get buffer: {}", err));
+            ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_CameraNative_releaseCamera(
+    _env: JNIEnv,
+    _class: JObject,
+) {
+    camera::release_camera();
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_swiftbot_NativeBindings_captureVideo(
+    mut env: JNIEnv,
+    _class: JClass,
+    file_path: JString,
+    duration_seconds: jint,
+) {
+    let file_path: String = match env.get_string(&file_path) {
+        Ok(s) => s.into(),
+        Err(_) => {
+            let _ = env.throw_new("java/io/IOException", "Invalid file path.");
+            return;
+        }
+    };
+
+    match camera::capture_video(&file_path, duration_seconds as u32) {
+        Ok(_) => (),
+        Err(e) => {
+            let _ = env.throw_new("java/lang/Exception", e);
+        }
+    }
 }

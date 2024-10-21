@@ -90,5 +90,8 @@ class NativeBindings {
     public static native void clearUnderlighting();
 
     //Camera control
-    public static native byte[] captureImage();
+    public static native java.nio.ByteBuffer getDirectBuffer() throws Exception;
+    public static native void releaseCamera();
+
+    public static native void captureVideo(String filePath, int durationSeconds) throws Exception;
 }

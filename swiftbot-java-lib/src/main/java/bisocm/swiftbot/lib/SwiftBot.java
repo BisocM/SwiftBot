@@ -1,7 +1,13 @@
 package bisocm.swiftbot.lib;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.nio.ByteBuffer;
+
 public class SwiftBot {
     private ButtonListener buttonListener;
+    private ByteBuffer buffer;
+    private boolean cameraStarted = false;
 
     public SwiftBot(ButtonListener buttonListener)
     {
@@ -202,12 +208,80 @@ public class SwiftBot {
      ***********************************************************************/
 
     /**
-     * Captures an image from the SwiftBot's camera.
+     * Starts the camera for live frame capture.
      *
-     * @return A byte array containing the captured image data in JPEG format.
-     *         Returns `null` if an error occurs.
+     * @throws Exception if the camera cannot be started or is in use.
      */
-    public byte[] captureImage() {
-        return NativeBindings.captureImage();
+    public void startCamera() throws Exception {
+        if (!cameraStarted) {
+            buffer = NativeBindings.getDirectBuffer();
+            if (buffer == null) {
+                throw new Exception("Failed to obtain camera buffer.");
+            }
+            cameraStarted = true;
+        }
+    }
+
+    /**
+     * Stops the camera and releases resources.
+     */
+    public void stopCamera() {
+        if (cameraStarted) {
+            NativeBindings.releaseCamera();
+            buffer = null;
+            cameraStarted = false;
+        }
+    }
+
+    /**
+     * Captures the latest frame from the camera.
+     *
+     * @return a BufferedImage containing the frame.
+     * @throws Exception if the camera is not started.
+     */
+    public BufferedImage getFrame() throws Exception {
+        if (!cameraStarted || buffer == null) {
+            throw new Exception("Camera is not started.");
+        }
+
+        synchronized (buffer) {
+            buffer.rewind();
+
+            int width = 640;
+            int height = 480;
+            int channels = 3;
+            int expectedSize = width * height * channels;
+
+            if (buffer.remaining() != expectedSize) {
+                throw new Exception("Buffer size mismatch.");
+            }
+
+            byte[] data = new byte[expectedSize];
+            buffer.get(data);
+
+            //Create BufferedImage from byte array
+            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+            final byte[] targetPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+
+            //Copy data into image pixels
+            System.arraycopy(data, 0, targetPixels, 0, data.length);
+
+            return image;
+        }
+    }
+
+    /**
+     * Captures video from the camera and saves it to the specified file.
+     * Cannot be used while the camera is started.
+     *
+     * @param filePath        The file path to save the video.
+     * @param durationSeconds The duration of the video in seconds.
+     * @throws Exception if the camera is in use or an error occurs.
+     */
+    public void captureVideo(String filePath, int durationSeconds) throws Exception {
+        if (cameraStarted) {
+            throw new Exception("Cannot capture video while camera is started.");
+        }
+        NativeBindings.captureVideo(filePath, durationSeconds);
     }
 }
